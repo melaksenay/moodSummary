@@ -20,15 +20,25 @@ public class MoodService {
     }
 
     public String analyzeMood(String userText) {
-        String prompt = "Analyze the mood of the following text and respond with a single word describing the mood: ";
-        return chatClient.prompt().system(prompt).user(userText).call().content().trim(); // .user() for user input
-    }
+    return chatClient.prompt()
+            .system("Analyze the user's mood. If the mood is negative (stress, anger, sadness), " +
+                    "translate it into a constructive artistic concept (e.g., 'Turbulence', 'Solitude', 'Intensity'). " +
+                    "Respond with ONLY one word.")
+            .user(userText)
+            .call()
+            .content()
+            .trim();
+}
 
     public MoodEntry createAndSaveMoodEntry (String userText) {
         String analyzedMood = analyzeMood(userText);
         String prompt = "Create an artistic representation of the user's mood description: " + analyzedMood;
-        String base64Image = bananaArtService.generate(prompt);
-        MoodEntry entry = new MoodEntry(userText, "Detected Mood: " + analyzedMood, base64Image);
+        
+        // URL "/images/mood-xyz.png" instead of Base64.
+        String imagePath = bananaArtService.generate(prompt);
+        
+        // Pass the path to the new constructor
+        MoodEntry entry = new MoodEntry(userText, "Detected Mood: " + analyzedMood, imagePath);
         return moodRepository.save(entry);
     }
 }

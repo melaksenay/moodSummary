@@ -5,6 +5,19 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+
+/src/main/resources/application.properties
+
+
+/uploads/
+
+
+/postgres_data/
+
+
+/build/
+.gradle/
+
 ### STS ###
 .apt_generated
 .classpath
