@@ -1,10 +1,14 @@
 package com.example.demo.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.model.MoodEntry;
 import com.example.demo.repository.MoodRepository;
+import org.springframework.data.domain.PageRequest;
 
 @Service
 public class MoodService {
@@ -28,7 +32,7 @@ public class MoodService {
             .call()
             .content()
             .trim();
-}
+    }
 
     public MoodEntry createAndSaveMoodEntry (String userText) {
         String analyzedMood = analyzeMood(userText);
@@ -40,5 +44,27 @@ public class MoodService {
         // Pass the path to the new constructor
         MoodEntry entry = new MoodEntry(userText, "Detected Mood: " + analyzedMood, imagePath);
         return moodRepository.save(entry);
+    }
+
+    public MoodEntry createCollageFromHistory(int k){
+        List<MoodEntry> history = moodRepository.findTopByOrderByCreatedAtDesc(PageRequest.of(0, k));
+
+        String combinedHistory = history.stream().map(MoodEntry::getUserMessage).collect(Collectors.joining(" | "));
+
+        String arcSummary = chatClient.prompt()
+            .system("You are an expert at summarizing user moods into a single artistic concept. " +
+                    "Based on the following user mood history, provide a concise artistic theme that captures the overall sentiment: ")
+            .user(combinedHistory)
+            .call()
+            .content()
+            .trim();
+        
+        String collagePrompt = "Create a collage that represents the following artistic theme: " + arcSummary;
+
+        String imagePath = bananaArtService.generate(collagePrompt);
+
+        MoodEntry collageEntry = new MoodEntry("Collage representing: " + arcSummary, "Collage Mood: " + arcSummary, imagePath);
+        return moodRepository.save(collageEntry);
+
     }
 }

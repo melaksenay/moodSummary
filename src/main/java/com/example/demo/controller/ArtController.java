@@ -31,4 +31,9 @@ public class ArtController {
         return moodRepository.findAll();
     }
 
+    @PostMapping("/collage/{k}")
+    public MoodEntry createCollage(@PathVariable int k) {
+        return moodService.createCollageFromHistory(k);
+    }
+
 }
