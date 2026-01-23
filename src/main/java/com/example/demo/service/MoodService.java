@@ -25,9 +25,8 @@ public class MoodService {
 
     public String analyzeMood(String userText) {
     return chatClient.prompt()
-            .system("Analyze the user's mood. If the mood is negative (stress, anger, sadness), " +
-                    "translate it into a constructive artistic concept (e.g., 'Turbulence', 'Solitude', 'Intensity'). " +
-                    "Respond with ONLY one word.")
+            .system("Analyze the user's mood. It is okay if the mood is negative. We want to display their raw emotions through art. " +
+                    "translate their emotion into an artistic concept in a few words ")
             .user(userText)
             .call()
             .content()
@@ -36,7 +35,7 @@ public class MoodService {
 
     public MoodEntry createAndSaveMoodEntry (String userText) {
         String analyzedMood = analyzeMood(userText);
-        String prompt = "Create an artistic representation of the user's mood description: " + analyzedMood;
+        String prompt = "Create an artistic representation of the user's mood description as an oil painting. No words on in your result. Mood: " + analyzedMood;
         
         // URL "/images/mood-xyz.png" instead of Base64.
         String imagePath = bananaArtService.generate(prompt);
@@ -49,11 +48,14 @@ public class MoodService {
     public MoodEntry createCollageFromHistory(int k){
         List<MoodEntry> history = moodRepository.findTopByOrderByCreatedAtDesc(PageRequest.of(0, k));
 
+        if (history.isEmpty()) {
+            throw new RuntimeException("Not enough history to create a collage.");
+        }
         String combinedHistory = history.stream().map(MoodEntry::getUserMessage).collect(Collectors.joining(" | "));
 
         String arcSummary = chatClient.prompt()
-            .system("You are an expert at summarizing user moods into a single artistic concept. " +
-                    "Based on the following user mood history, provide a concise artistic theme that captures the overall sentiment: ")
+            .system("You are an expert at summarizing user moods into an artistic concept. " +
+                    "Based on the following user mood history, provide a concise artistic theme that captures the overall sentiment. Keep all art in the style of an oil painting.: ")
             .user(combinedHistory)
             .call()
             .content()
